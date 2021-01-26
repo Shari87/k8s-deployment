@@ -35,11 +35,11 @@ The framework comprises of two folders k8s-yaml-config and terraform-k8s
         ```
     * **Creating the frontend**
         * The frontend sends requests to the backend worker Pods by using the DNS name given to the backend Service
-        * The DNS name is ```bash hello```, which is the value of the ```bash name``` field in the ```bash backend-service.yaml``` configuration file
+        * The DNS name is ```hello```, which is the value of the ```name``` field in the ```backend-service.yaml``` configuration file
         * The Pods in the frontend Deployment run a nginx image that is configured to proxy requests to the hello backend Service
         * Create the frontend deployment and service:
         ```bash
-        kubectl apply -f frontend-service.yaml  # # the service object is defined in the deployment file, so this command needn't be run separately
+        kubectl apply -f frontend-service.yaml  # the service object is defined in the deployment file, so this command needn't be run separately
         kubectl apply -f frontend-deployment.yaml
         ```
 
