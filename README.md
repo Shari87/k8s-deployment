@@ -128,4 +128,85 @@ $ KUBECONFIG=./kubeconfig_my-cluster kubectl get pods --all-namespaces
         * Three public and private subnets
         * A single NAT gateway
         * **Tags for the subnets**
-    * 
+    * **The tags for subnets are quite crucial as those are used by AWS to automatically provision public and internal load balancers in the appropriate subnets**
+    * The second important block in the terraform file is the **EKS cluster module**:
+    * **The EKS module** is in charge of:
+        * Creating the control plane
+        * Setting up autoscaling groups
+        * Setting up the proper security groups
+        * Creating the kubeconfig file
+        * **And more**
+    * **Notice how the EKS cluster has to be created into a VPC**
+    * Also, the worker nodes for your Kubernetes cluster should be deployed in the private subnets
+    * The last part of the file is basically
+        * **Setup the right permissions to connect to the cluster**
+        * **Poll the cluster to make sure it's ready**
+    * And that's all!!
+
+# External DNS
+* If EKS version > 1.13, you can use an IAM service account directly as below:
+* Create hosted zone on **AWS Route53**
+    ```bash
+    $ aws route53 create-hosted-zone --name "external-dns-test.my-org.com." --caller-reference "external-dns-test-$(date +%s)"
+    ```
+* Create IAM policy
+```
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "route53:ChangeResourceRecordSets"
+      ],
+      "Resource": [
+        "arn:aws:route53:::hostedzone/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "route53:ListHostedZones",
+        "route53:ListResourceRecordSets"
+      ],
+      "Resource": [
+        "*"
+      ]
+    }
+  ]
+}
+```
+* Create IAM role for service account
+```
+eksctl create iamserviceaccount \
+ — name external-dns \
+ — namespace kube-system \
+ — cluster YOUR_CLUSTER_NAME \
+ — attach-policy-arn YOUR_IAM_POLICY_ARN \
+ — approve
+ ```
+ * Check service account IAM role
+ ```bash
+ kubectl describe sa external-dns kube-system
+ ```
+ * Deploy External DNS yaml config (present in the external-dns folder)
+
+ # Load Balancer
+ * To use LoadBalancer, change your service yaml file ```type:LoadBalancer``` and add annotation for your external DNS hostname ```
+ external-dns.alpha.kubernetes.io/hostname```
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: yourservice.external-dns-test.my-org.com 
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    name: http
+    targetPort: 80
+  selector:
+    app: hello
+```
