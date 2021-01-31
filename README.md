@@ -58,3 +58,74 @@ The framework comprises of two folders k8s-yaml-config and terraform-k8s
         ```bash
         {"message":"Hello"}
         ```
+    * **Network Policies**
+        * Access to db ports is provided from the backend pod using network policies.
+        Use the command:
+        ```bash
+        kubectl apply -f network-policies.yaml
+        ```
+    * **Cleaning up**
+        * To delete the services, enter this command:
+        ```bash
+        kubectl delete services frontend backend
+        ```
+        * To delete the deployments, replicasets, and the pods that are running the frontend and backend applications, enter this command:
+        ```bash
+        kubectl delete deployments frontend backend
+        ```
+2. **terraform-k8s**
+* Terraform is an open-source IaC tool
+* Instead, of writing the code to create the infrastructure, you define a plan of what you want to be executed, and you let Terraform create the resources on your behalf
+* But let's take a break from the theory and see those concepts in practice
+* Before you can create a cluster with Terraform, you should install the binary
+* Download Terraform for linux [terraform]https://releases.hashicorp.com/terraform/0.13.5/terraform_0.13.5_linux_amd64.zip from the highlighted link
+* Verify that the Terraform tool has been installed correctly with:
+```bash
+terraform version
+```
+* To initalize terraform, run the command
+```bash
+terraform init
+```
+* This command will initialize Terraform and create two more folders as well as a state file
+* **The state file is used to keep track of all the resources that have been created already**
+* Consider this as a checkpoint, without it Terraform won't know what has been already created or updated
+* There is another command that you can utilize in your undertaking with Terraform
+* To quickly check if the configuration doesn't have any configuration errors you can do so with:
+```bash
+terraform validate
+```
+* Next, you should run:
+```bash
+terraform plan
+```
+* Terraform will then perform a dry-run and will prompt you a detailed summary of what resources is about to create
+* If you feel confident that everything looks fine, you can create the resources with:
+```bash
+terraform apply # you will be asked to confirm your choices --- just type yes
+```
+* The process takes about 20 minutes to provision all the resources
+* When its complete, if you inspect the current folder 
+```bash
+tree .
+.
+|---- kubeconfig_my-cluster
+|---- vpc-eks.tf # the file present inside 1-infrastructure
+|---- terraform.tfstate
+|---- terraform.tfstate.backup
+```
+* ```terraform.tfstate``` and  ```terraform.tfstate.backup``` are the two files used by terraform to keep track of what resources were created
+* The ```kubeconfig_my-cluster``` is the kubeconfig for the newly created cluster
+* You can test the connection with the cluster by using that file with:
+```bash
+$ KUBECONFIG=./kubeconfig_my-cluster kubectl get pods --all-namespaces
+```
+* This command would list down the default namespaces with all the pods created in the default namespace
+* Now that you've created the cluster, it's time to go back and discuss the terraform file
+* **vpc-eks.tf** 
+    * The first block is **the VPC module**
+        * A VPC
+        * Three public and private subnets
+        * A single NAT gateway
+        * **Tags for the subnets**
+    * 
